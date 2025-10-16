@@ -1,1 +1,28 @@
- 
+ DECLARE
+    v_sql       VARCHAR2(4000);
+    v_count     NUMBER;
+BEGIN
+    FOR rec IN (
+        SELECT table_name, column_name, data_type
+        FROM user_tab_columns
+        WHERE data_type IN ('VARCHAR2', 'CHAR', 'CLOB', 'NVARCHAR2', 'NCHAR')
+    )
+    LOOP
+        v_sql := 'SELECT COUNT(*) FROM ' || rec.table_name ||
+                 ' WHERE ' || rec.column_name || ' LIKE ''%tttttt%''';
+
+        BEGIN
+            EXECUTE IMMEDIATE v_sql INTO v_count;
+
+            IF v_count > 0 THEN
+                DBMS_OUTPUT.PUT_LINE('Table : ' || rec.table_name ||
+                                     ' | Colonne : ' || rec.column_name ||
+                                     ' | Occurrences : ' || v_count);
+            END IF;
+        EXCEPTION
+            WHEN OTHERS THEN
+                NULL; -- Ignore les erreurs d’accès ou de conversion
+        END;
+    END LOOP;
+END;
+/
