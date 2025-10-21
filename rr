@@ -4,26 +4,17 @@
   <version>3.2.0</version>
   <executions>
     <execution>
-      <id>append-to-zip</id>
-      <phase>package</phase>
+      <id>add-evolutions-into-zip</id>
+      <phase>prepare-package</phase>
       <goals><goal>run</goal></goals>
       <configuration>
         <failOnError>true</failOnError>
-        <target name="append-to-zip" description="Ajouter des fichiers à un ZIP existant">
-          <property name="zip" value="${project.build.directory}/app.zip"/>
-          <property name="extras.dir" value="${project.build.directory}/extras"/>
-          <property name="thirdparty.zip" value="${project.build.directory}/third-party.zip"/>
+        <target name="add-evolutions-into-zip">
+          <property name="src.dir" value="${basedir}/../target/package/ems_evolutions"/>
+          <property name="zip"     value="${archive}"/> <!-- ex: ${project.build.directory}/app.zip -->
 
-          <!-- Ajouter depuis le système de fichiers -->
-          <zip destfile="${zip}" update="true" duplicate="preserve" encoding="UTF-8">
-            <fileset dir="${extras.dir}">
-              <include name="readme.txt"/>
-              <include name="assets/**"/>
-              <exclude name="**/*.tmp"/>
-            </fileset>
-
-            <!-- Ajouter depuis un autre ZIP, dans un sous-dossier -->
-            <zipfileset src="${thirdparty.zip}" includes="lib/**" prefix="libs/"/>
+          <zip destfile="${zip}" update="true" whenempty="fail">
+            <zipfileset dir="${src.dir}" includes="**/*" prefix="resources/ems_evolutions/"/>
           </zip>
         </target>
       </configuration>
