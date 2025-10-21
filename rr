@@ -1,23 +1,24 @@
-<plugin>
-  <groupId>org.apache.maven.plugins</groupId>
-  <artifactId>maven-antrun-plugin</artifactId>
-  <version>3.2.0</version>
-  <executions>
-    <execution>
-      <id>add-evolutions-into-zip</id>
-      <phase>prepare-package</phase>
-      <goals><goal>run</goal></goals>
-      <configuration>
-        <failOnError>true</failOnError>
-        <target name="add-evolutions-into-zip">
-          <property name="src.dir" value="${basedir}/../target/package/ems_evolutions"/>
-          <property name="zip"     value="${archive}"/> <!-- ex: ${project.build.directory}/app.zip -->
+<target name="fix-reviews" description="Déplacer un répertoire dans le ZIP">
+  <property name="archive.reviews" value="${project.build.directory}/reviews.zip"/>
+  <property name="plugin.version"  value="${code.review.plugin.version}"/>
 
-          <zip destfile="${zip}" update="true" whenempty="fail">
-            <zipfileset dir="${src.dir}" includes="**/*" prefix="resources/ems_evolutions/"/>
-          </zip>
-        </target>
-      </configuration>
-    </execution>
-  </executions>
-</plugin>
+  <!-- Crée une copie du ZIP avec le dossier renommé -->
+  <zip destfile="${archive.reviews}.tmp" whenempty="fail">
+    <!-- Exclut l’ancien dossier -->
+    <zipfileset src="${archive.reviews}"
+                excludes="code-review-resources-${plugin.version}/**"/>
+
+    <!-- Réinjecte le contenu en le mappant vers le nouveau chemin -->
+    <zipfileset src="${archive.reviews}">
+      <include name="code-review-resources-${plugin.version}/**"/>
+      <mapper>
+        <globmapper
+          from="code-review-resources-${plugin.version}/*"
+          to="resources/*"/>
+      </mapper>
+    </zipfileset>
+  </zip>
+
+  <!-- Remplace le ZIP original -->
+  <move file="${archive.reviews}.tmp" tofile="${archive.reviews}" overwrite="true"/>
+</target>
