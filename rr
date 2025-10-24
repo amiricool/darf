@@ -1,24 +1,41 @@
-<target name="fix-reviews" description="Déplacer un répertoire dans le ZIP">
-  <property name="archive.reviews" value="${project.build.directory}/reviews.zip"/>
-  <property name="plugin.version"  value="${code.review.plugin.version}"/>
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
-  <!-- Crée une copie du ZIP avec le dossier renommé -->
-  <zip destfile="${archive.reviews}.tmp" whenempty="fail">
-    <!-- Exclut l’ancien dossier -->
-    <zipfileset src="${archive.reviews}"
-                excludes="code-review-resources-${plugin.version}/**"/>
+private void initXML() throws ParserConfigurationException, TransformerConfigurationException, SAXException {
+    // JAXP + SAX
+    SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance(
+        "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl",
+        this.getClass().getClassLoader()
+    );
 
-    <!-- Réinjecte le contenu en le mappant vers le nouveau chemin -->
-    <zipfileset src="${archive.reviews}">
-      <include name="code-review-resources-${plugin.version}/**"/>
-      <mapper>
-        <globmapper
-          from="code-review-resources-${plugin.version}/*"
-          to="resources/*"/>
-      </mapper>
-    </zipfileset>
-  </zip>
+    TransformerHandler th = tf.newTransformerHandler();
+    Transformer serializer = th.getTransformer();
 
-  <!-- Remplace le ZIP original -->
-  <move file="${archive.reviews}.tmp" tofile="${archive.reviews}" overwrite="true"/>
-</target>
+    serializer.setOutputProperty(OutputKeys.MEDIA_TYPE, "XML");
+    // serializer.setOutputProperty(OutputKeys.ENCODING, "ISO-8859-1");
+    serializer.setOutputProperty(OutputKeys.ENCODING, getProperty(WRITER_ENCODING));
+
+    // pretty XMI output
+    serializer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+    serializer.setOutputProperty(OutputKeys.INDENT, "yes");
+
+    th.setResult(out);
+    th.startDocument();
+
+    AttributesImpl atts = new AttributesImpl();
+
+    atts.addAttribute("", "xmlns", "xmlns", "CDATA", MESSAGE_XMI_NAMESPACE_URI);
+    th.startElement("", "MESSAGE", "MESSAGE", atts);
+
+    atts.clear();
+    atts.addAttribute("", "xmlns", "xmlns", "CDATA", MSGSCERTIS_XMI_NAMESPACE_URI);
+    th.startElement("", "MSGSCERTIS", "MSGSCERTIS", atts);
+
+    atts.clear();
+}
