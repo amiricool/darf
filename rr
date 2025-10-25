@@ -1,27 +1,28 @@
 <execution>
   <id>copy-ems-evolutions</id>
   <phase>prepare-package</phase>
-  <goals>
-    <goal>run</goal>
-  </goals>
+  <goals><goal>run</goal></goals>
   <configuration>
-    <target name="add-ems-evolutions-into-zip">
-      <available file="${basedir}/../target/package/ems_evolutions" property="ems.evolutions.exists"/>
+    <target name="add-ems-evolutions-into-unzip"
+            xmlns:if="ant:if" xmlns:unless="ant:unless">
 
-      <condition property="skip.ems.evolutions">
-        <not>
-          <isset property="ems.evolutions.exists"/>
-        </not>
-      </condition>
+      <property name="ems.evolutions.dir"
+                value="${basedir}/../target/package/ems_evolutions"/>
 
-      <echo if:set="skip.ems.evolutions"
-            message="INFO: Skipping zip for 'ems_evolutions' — directory '${basedir}/../target/package/ems_evolutions' does not exist."/>
+      <!-- Détecte la présence du dossier -->
+      <available file="${ems.evolutions.dir}" type="dir"
+                 property="ems.evolutions.exists"/>
 
-      <zip destfile="${archive}" update="true" whenempty="fail" unless="skip.ems.evolutions">
-        <zipfileset dir="${basedir}/../target/package/ems_evolutions"
-                    prefix="resources/ems_evolutions"
-                    includes="**/*"/>
-      </zip>
+      <!-- Log si absent -->
+      <echo unless:set="ems.evolutions.exists"
+            message="INFO: Skipping unzip for 'ems_evolutions' — directory '${ems.evolutions.dir}' not found."/>
+
+      <!-- Unzip si présent -->
+      <mkdir dir="${ems.evolutions.dir}" if:set="ems.evolutions.exists"/>
+      <unzip if:set="ems.evolutions.exists"
+             src="${archive}"
+             dest="${ems.evolutions.dir}"
+             overwrite="true"/>
     </target>
   </configuration>
 </execution>
