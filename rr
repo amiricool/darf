@@ -1,38 +1,27 @@
-<plugin>
-  <groupId>org.apache.maven.plugins</groupId>
-  <artifactId>maven-antrun-plugin</artifactId>
-  <version>3.1.0</version>
-  <executions>
-    <execution>
-      <id>filter-zip-with-zipfileset</id>
-      <phase>prepare-package</phase>
-      <goals><goal>run</goal></goals>
-      <configuration>
-        <target>
-          <property name="zip.tmp" value="${project.build.directory}/filtered.zip"/>
+<execution>
+  <id>copy-ems-evolutions</id>
+  <phase>prepare-package</phase>
+  <goals>
+    <goal>run</goal>
+  </goals>
+  <configuration>
+    <target name="add-ems-evolutions-into-zip">
+      <available file="${basedir}/../target/package/ems_evolutions" property="ems.evolutions.exists"/>
 
-          <!-- 1) Recréer l’archive en excluant ce que tu veux supprimer -->
-          <zip destfile="${zip.tmp}">
-            <!-- Tout le ZIP, sauf applications/** -->
-            <zipfileset src="${archive}">
-              <exclude name="applications/**"/>
-            </zipfileset>
+      <condition property="skip.ems.evolutions">
+        <not>
+          <isset property="ems.evolutions.exists"/>
+        </not>
+      </condition>
 
-            <!-- Puis on remet UNIQUEMENT ce que l’on veut garder sous applications/ -->
-            <zipfileset src="${archive}">
-              <include name="applications/itl-container*/**"/>
-              <!-- <include name="applications/itl-core-logger/**"/> -->
-              <!-- <include name="applications/itl-interface-cft/**"/> -->
-              <!-- <include name="applications/itl-interface-mqs/**"/> -->
-              <include name="applications/itl-interface-remediation/**"/>
-            </zipfileset>
-          </zip>
+      <echo if:set="skip.ems.evolutions"
+            message="INFO: Skipping zip for 'ems_evolutions' — directory '${basedir}/../target/package/ems_evolutions' does not exist."/>
 
-          <!-- 2) Remplacer l’original -->
-          <delete file="${archive}" quiet="true"/>
-          <move file="${zip.tmp}" tofile="${archive}"/>
-        </target>
-      </configuration>
-    </execution>
-  </executions>
-</plugin>
+      <zip destfile="${archive}" update="true" whenempty="fail" unless="skip.ems.evolutions">
+        <zipfileset dir="${basedir}/../target/package/ems_evolutions"
+                    prefix="resources/ems_evolutions"
+                    includes="**/*"/>
+      </zip>
+    </target>
+  </configuration>
+</execution>
