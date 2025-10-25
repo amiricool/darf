@@ -1,41 +1,38 @@
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-antrun-plugin</artifactId>
+  <version>3.1.0</version>
+  <executions>
+    <execution>
+      <id>filter-zip-with-zipfileset</id>
+      <phase>prepare-package</phase>
+      <goals><goal>run</goal></goals>
+      <configuration>
+        <target>
+          <property name="zip.tmp" value="${project.build.directory}/filtered.zip"/>
 
-private void initXML() throws ParserConfigurationException, TransformerConfigurationException, SAXException {
-    // JAXP + SAX
-    SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance(
-        "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl",
-        this.getClass().getClassLoader()
-    );
+          <!-- 1) Recréer l’archive en excluant ce que tu veux supprimer -->
+          <zip destfile="${zip.tmp}">
+            <!-- Tout le ZIP, sauf applications/** -->
+            <zipfileset src="${archive}">
+              <exclude name="applications/**"/>
+            </zipfileset>
 
-    TransformerHandler th = tf.newTransformerHandler();
-    Transformer serializer = th.getTransformer();
+            <!-- Puis on remet UNIQUEMENT ce que l’on veut garder sous applications/ -->
+            <zipfileset src="${archive}">
+              <include name="applications/itl-container*/**"/>
+              <!-- <include name="applications/itl-core-logger/**"/> -->
+              <!-- <include name="applications/itl-interface-cft/**"/> -->
+              <!-- <include name="applications/itl-interface-mqs/**"/> -->
+              <include name="applications/itl-interface-remediation/**"/>
+            </zipfileset>
+          </zip>
 
-    serializer.setOutputProperty(OutputKeys.MEDIA_TYPE, "XML");
-    // serializer.setOutputProperty(OutputKeys.ENCODING, "ISO-8859-1");
-    serializer.setOutputProperty(OutputKeys.ENCODING, getProperty(WRITER_ENCODING));
-
-    // pretty XMI output
-    serializer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
-    serializer.setOutputProperty(OutputKeys.INDENT, "yes");
-
-    th.setResult(out);
-    th.startDocument();
-
-    AttributesImpl atts = new AttributesImpl();
-
-    atts.addAttribute("", "xmlns", "xmlns", "CDATA", MESSAGE_XMI_NAMESPACE_URI);
-    th.startElement("", "MESSAGE", "MESSAGE", atts);
-
-    atts.clear();
-    atts.addAttribute("", "xmlns", "xmlns", "CDATA", MSGSCERTIS_XMI_NAMESPACE_URI);
-    th.startElement("", "MSGSCERTIS", "MSGSCERTIS", atts);
-
-    atts.clear();
-}
+          <!-- 2) Remplacer l’original -->
+          <delete file="${archive}" quiet="true"/>
+          <move file="${zip.tmp}" tofile="${archive}"/>
+        </target>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
